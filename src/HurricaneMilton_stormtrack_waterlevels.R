@@ -148,7 +148,8 @@ plot(st_geometry(FLCounty))
 # write.csv(milton.track.dat,paste0(export.path,"milton_track.csv"),row.names = F)
 
 milton.track.dat=read.csv(paste0(export.path,"milton_track.csv"))|>
-  mutate(DateTime.EST = date.fun(DateTime,tz="EST",form="%Y-%m-%d %H"),
+  mutate(DateTime = date.fun(DateTime,tz="UTC",form="%Y-%m-%d %H"),
+         DateTime.EST = date.fun(DateTime,tz="EST",form="%Y-%m-%d %H"),
          Date = date.fun(DateTime,tz="UTC"))
 
 milton.track.dat.sp=st_as_sf(subset(milton.track.dat,is.na(Lat.DD)==F),coords=c("Lon.DD","Lat.DD"),crs=wgs84)|>
@@ -242,7 +243,7 @@ bk.dbks=data.frame(SITE=c("L001","L005","L006","LZ40","S133TW","S352HW","S4TW"),
 ## missing S308HW data
 lakeO.bk=data.frame()
 for(i in 1:nrow(bk.dbks)){
-  tmp=DBHYDRO_breakpoint(as.Date(startDate),as.Date(endDate),bk.dbks$DBKEY[i])
+  tmp=DBHYDRO_daily(as.Date(startDate),as.Date(endDate),bk.dbks$DBKEY[i],vert_datum=2)
   tmp$DBKEY=as.character(bk.dbks$DBKEY[i])
   lakeO.bk=rbind(lakeO.bk,tmp)
   print(i)
@@ -266,7 +267,7 @@ sites.info=rbind(sites.info,
                             dec_lat_va=c(26.950333),
                             dec_long_va=c(-80.833114),
                             alt_datum_cd="NGVD29",
-                            WL_con=0
+                            WL_con=1.25
                  )
 )
 
@@ -287,8 +288,8 @@ LOK_fill =expand.grid(site_no = "LOK",
                       datetime.hr.utc = seq(startDate,endDate,"1 hour"))
 LakeO.xtab2=merge(LakeO.xtab2,LOK_fill,
                   c("site_no","datetime.hr.utc"),all.y=T)
-LakeO.xtab2$WL_con=0
-LakeO.xtab2$GH_Inst_NGVD29=LakeO.xtab2$mean
+LakeO.xtab2$WL_con=1.25
+LakeO.xtab2$GH_Inst_NGVD29=LakeO.xtab2$mean+LakeO.xtab2$WL_con
 colnames(LakeO.xtab2)=names(nwis_data2)
 
 dat.all=rbind(nwis_data2,LakeO.xtab2)
@@ -297,6 +298,7 @@ dat.all=rbind(nwis_data2,LakeO.xtab2)
 # ddply(dat.all,"site_no",summarise,min.diff = min(diff(dateTime)),max.diff = max(diff(dateTime)))
 
 plot(GH_Inst_NGVD29~dateTime,subset(dat.all, site_no=="02300042"),type="l")
+plot(GH_Inst_NGVD29~dateTime,subset(dat.all, site_no=="LOK"),type="l")
 
 subset(dat.all, site_no=="02300042"&is.na(GH_Inst_NGVD29))
 
@@ -334,10 +336,10 @@ bbox.lims2 = st_bbox(st_buffer(st_transform(GOM.poly2,utm17),-10000))
 xlim.val=date.fun(c("2024-10-04","2024-10-14"),tz="UTC");xmaj=seq(xlim.val[1],xlim.val[2],"3 days");xmin=seq(xlim.val[1],xlim.val[2],"1 days")
 step.ls=seq(as.POSIXct("2024-10-04 06:00:00","UTC"),as.POSIXct("2024-10-13 06:00:00","UTC"),"1 hours")
 
-tmp = ddply(dat.all,"site_no",summarise,min.val = min(GH_Inst,na.rm=T),max.val = max(GH_Inst,na.rm=T))
+tmp = ddply(dat.all,"site_no",summarise,min.val = min(GH_Inst_NGVD29,na.rm=T),max.val = max(GH_Inst_NGVD29,na.rm=T))
 tmp = tmp[match(site.ls,tmp$site_no),]
-min.y = floor(tmp$min.val);min.y[min.y==14]=13; min.y[5] = min.y[5]-1
-max.y = ceiling(tmp$max.val+tmp$max.val*0.2); max.y[1:3]=max.y[1:3]+1;max.y[max.y==18]=17
+min.y = floor(tmp$min.val);min.y[5]=min.y[5]-1# min.y[min.y==14]=13; min.y[5] = min.y[5]-1
+max.y = ceiling(tmp$max.val+tmp$max.val*0.05);max.y[2]=max.y[2]+1;# max.y[tmp$site_no=="LOK"]=max.y[tmp$site_no=="LOK"]-1#  max.y[1:3]=max.y[1:3]+1;max.y[max.y==18]=17
 
 AOI.poly <- raster::extent(FLCounty)|>
   as("SpatialPolygons")|>
@@ -368,6 +370,7 @@ for(i in 1:length(step.ls)){
   for(j in 1:6){
     ylim.val = c(min.y[j],max.y[j]);
     by.y=floor((max.y[j]-min.y[j])/2)
+    # if(by.y==0){by.y=0.5}
     ymaj=seq(ylim.val[1],ylim.val[2],by.y);
     ymin=seq(ylim.val[1],ylim.val[2],by.y/2)
     dat.site.tmp2 = subset(dat.site.tmp,site_no==site.ls[j])
@@ -522,4 +525,46 @@ abline(v=MiltonLandFall.utc,col=adjustcolor("pink",0.75),lwd=2)
 mtext(side=1,line=1.75,"Date (Month-Day)")
 
 mtext(side=2,outer=T,line=-1.25,"Stage Elevation (Ft, NGVD29)")
+dev.off()
+
+
+
+# LOK Seiche --------------------------------------------------------------
+bk.NS.dbks=data.frame(SITE=c("S133","S3"),
+                   DBKEY=c("IY368","06636"),
+                   type="breakpoint")
+LOK_NS = DBHYDRO_daily(as.Date(startDate),as.Date(endDate),bk.NS.dbks$DBKEY)
+LOK_NS = merge(LOK_NS,bk.NS.dbks,"DBKEY")
+
+LOK_NS$datetime.utc=date.fun(LOK_NS$DATETIME,tz="UTC",form="%Y-%m-%d %H:%M:%S")
+LOK_NS$datetime.hr.utc=date.fun(paste(format(LOK_NS$datetime.utc,"%Y-%m-%d"),
+                                        format(LOK_NS$datetime.utc,"%H"),":00:00"),form="%Y-%m-%d %H :%M:%S",tz="UTC")
+
+LOK_NS.xtab = dcast(LOK_NS,datetime.hr.utc~SITE,value.var="Data.Value",max,na.rm=T)
+LOK_NS.xtab$N_S_diff = with(LOK_NS.xtab,S133-S3)
+max(LOK_NS.xtab$N_S_diff)
+summary(LOK_NS.xtab)
+subset(LOK_NS.xtab,date.fun(datetime.hr.utc,tz="UTC")%in%date.fun("2024-10-10",tz="UTC"))
+
+# png(filename=paste0(plot.path,"/LOK_stg_seiche.png"),width=6.5,height=5,units="in",res=200,type="windows",bg="white")
+par(family="serif",mar=c(1,3.5,0.25,0.4),oma=c(3,0.1,1,0.3))
+
+ylim.val = c(12,20);by.y=2;ymaj=seq(ylim.val[1],ylim.val[2],by.y);ymin=seq(ylim.val[1],ylim.val[2],by.y/2)
+xlim.val=c(startDate,endDate);xmaj=seq(xlim.val[1],xlim.val[2],"1 days");xmin=seq(xlim.val[1],xlim.val[2],"3 hours")
+plot(S133~datetime.hr.utc,LOK_NS.xtab,xlim=xlim.val,ylim=ylim.val,type="n",axes=F,ann=F)
+abline(h=ymaj,v=xmaj,lty=3,col="grey",lwd=0.75)
+lines(S133~datetime.hr.utc,LOK_NS.xtab,col="dodgerblue1",lwd=1.25,lty=1)
+lines(S3~datetime.hr.utc,LOK_NS.xtab,col="indianred1",lwd=1.25)
+# lines(GH_Inst_NGVD29~ dateTime,LakeO.xtab2)
+axis_fun(1,xmaj,xmin,format(xmaj,"%d"))
+axis_fun(2,ymaj,ymin,format(ymaj));box(lwd=1)
+abline(v=MiltonLandFall.utc,col=adjustcolor("pink",0.5),lwd=2)
+
+text(MiltonLandFall.utc,20,"Milton",font=2)
+mtext(side=1,line=2,"Oct 2024 (UTC)")
+mtext(side=2,outer=T,line=-1.25,"Stage Elevation (Ft, NGVD29)")
+legend("topleft",c("North (S133 TW)","South (S3 TW)"),
+       pch=c(NA),lty=c(1,1),lwd=c(1.25),
+       col=c("dodgerblue1","indianred1"),pt.bg=c(NA),
+       pt.cex=1.5,ncol=1,cex=0.95,bty="n",y.intersp=1.5,x.intersp=0.75,xpd=NA,xjust=0.5,yjust=0.5)
 dev.off()
