@@ -540,7 +540,7 @@ LOK_NS$datetime.utc=date.fun(LOK_NS$DATETIME,tz="UTC",form="%Y-%m-%d %H:%M:%S")
 LOK_NS$datetime.hr.utc=date.fun(paste(format(LOK_NS$datetime.utc,"%Y-%m-%d"),
                                         format(LOK_NS$datetime.utc,"%H"),":00:00"),form="%Y-%m-%d %H :%M:%S",tz="UTC")
 
-LOK_NS.xtab = dcast(LOK_NS,datetime.hr.utc~SITE,value.var="Data.Value",max,na.rm=T)
+LOK_NS.xtab = dcast(LOK_NS,datetime.hr.utc~SITE,value.var="Data.Value",mean,na.rm=T)
 LOK_NS.xtab$N_S_diff = with(LOK_NS.xtab,S133-S3)
 max(LOK_NS.xtab$N_S_diff)
 summary(LOK_NS.xtab)
