@@ -1,0 +1,18 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+Original repo here: [https://github.com/SwampThingPaul/HurricaneIan](https://github.com/SwampThingPaul/HurricaneIan)
+
+# HurricaneIan
+
+using methods by [https://github.com/USGS-VIZLAB/hurricane-irma](https://github.com/USGS-VIZLAB/hurricane-irma) to generate something similar for Hurricane Ian (9/2022).

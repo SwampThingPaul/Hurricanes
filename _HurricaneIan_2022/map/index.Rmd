@@ -1,0 +1,120 @@
+---
+title: "Hurricane Ian High Water Line Data"
+output: 
+  html_document:
+    toc: yes
+    includes:
+      after_body: footer.html
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+## Libraries
+#devtools::install_github("SwampThingPaul/AnalystHelper")
+library(AnalystHelper);
+library(plyr)
+library(reshape)
+library(zoo)
+
+# GIS libraries 
+library(rgdal)
+library(rgeos)
+library(raster)
+library(tmap)
+
+library(magrittr)
+library(flextable)
+
+## Paths
+wd="C:/Julian_LaCie/_Github/HurricaneIan"
+
+paths=paste0(wd,c("/Plots/","/Export/","/Data/","/src/"))
+# Folder.Maker(paths);#One and done. Creates folders in working directory.
+plot.path=paths[1]
+export.path=paths[2]
+data.path=paths[3]
+
+GIS.path="C:/Julian_LaCie/_GISData"
+
+nad83.pro=CRS("+init=epsg:4269")
+utm17=CRS("+init=epsg:26917")
+
+tmap_mode("view")
+# GIS ---------------------------------------------------------------------
+HWL.dat=readOGR(paste0(wd,"/map/data"),"HWL_data")
+
+HWL.tps=raster(paste0(wd,"/map/data/HWL_tps.tif"))
+
+tmp.dat=data.frame(ID="Please contact pjulian@sccf.org for data file. ")
+
+## 
+b=seq(0,10,1)
+```
+
+
+Updated: `r paste(format(Sys.Date(),"%B %d, %Y"))`
+
+***
+
+Data presented in this map is a subset of used in this analysis was retrieved from the United Geological Service [Flood Event Viewer](https://stn.wim.usgs.gov/fev/#2022Ian){target="_blank"} and data collected by SCCF staff. Data can be downloaded here:  
+
+```{r,echo=F,warning=FALSE,message=FALSE}
+library(downloadthis)
+
+tmp.dat%>%
+  download_this(
+    output_name = "HWLData_2022",
+    output_extension = ".xlsx",
+    button_label = "Download dataset as .xlsx",
+    button_type = "primary",
+    has_icon = TRUE,
+    icon = "fa fa-file-excel"
+  )
+
+```
+
+### [`r paste(fontawesome::fa("github"),"Source Code")`](https://github.com/SwampThingPaul/HurricaneIan){target="_blank"}
+
+* GitHub repo [https://github.com/SwampThingPaul/HurricaneIan](https://github.com/SwampThingPaul/HurricaneIan){target="_blank"}
+
+### Point Data
+
+```{r map, out.width="100%",fig.align='center', echo=FALSE,warning=FALSE, message=FALSE}
+tm_basemap(leaflet::providers$OpenStreetMap,alpha=0.9)+
+  tm_basemap(leaflet::providers$Esri.WorldImagery,alpha=0.9)+
+tm_shape(HWL.dat,name="High Water Line Data (Ft above ground)")+tm_dots(col="red",alpha=0.75,size=0.05,id="Source",popup.vars=c("HWL (FT)"="hght_b_","Source"="Source"))
+
+```
+
+***
+
+### Interpolated Data
+
+```{r map2, out.width="100%",fig.align='center', echo=FALSE,warning=FALSE, message=FALSE}
+# tm_basemap(leaflet::providers$OpenStreetMap,alpha=0.9)+
+#   tm_basemap(leaflet::providers$Esri.WorldImagery,alpha=0.9)+
+# tm_shape(HWL.tps,name="High Water Line Data (Ft above ground)")+tm_raster(alpha=0.75,palette=viridisLite::viridis(length(b)),breaks=b)
+
+```
+
+
+```{r map3, out.width="100%",fig.align='center', echo=FALSE,warning=FALSE, message=FALSE}
+#interactive leaflet map
+library(leaflet)
+leaflet() %>% 
+  addProviderTiles('OpenStreetMap') %>%
+  addRasterImage(HWL.tps[[1]], 
+                 colors=viridisLite::viridis(length(b)), 
+                 group = 'HWL', 
+                 opacity = 0.75,
+                 layerId = 'High Water Line (Ft above ground)') %>%
+  leafem::addImageQuery(HWL.tps[[1]],
+                layerId = 'HWL',
+                type='click',
+                digits=2,
+                prefix='Raster Value')
+```
+***
