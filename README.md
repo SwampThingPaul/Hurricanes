@@ -18,13 +18,15 @@ source code: `./src/HurricaneMilton_stormtrack_waterlevels.R`
 
 ## Hurricane Ian (September 2022)
 
-<img src="./HurricaneIan/Plots/HurricaneIan_stage_inst_statewide_gifski_nologo.gif" width="80%" style="display: block; margin: auto;" />
+<img src="./_HurricaneIan_2022/Plots/HurricaneIan_stage_inst_statewide_gifski_nologo.gif" width="80%" style="display: block; margin: auto;" />
 
-<img src="./HurricaneIan/Plots/HurricaneIan_rainfall_inst_gifski.gif" width="80%" style="display: block; margin: auto;" />
+<img src="./_HurricaneIan_2022/Plots/HurricaneIan_rainfall_inst_gifski.gif" width="80%" style="display: block; margin: auto;" />
 
-<img src="./HurricaneIan/Plots/HWL_Captiva.png" width="80%" style="display: block; margin: auto;" />
+<img src="./_HurricaneIan_2022/Plots/HWL_Captiva.png" width="80%" style="display: block; margin: auto;" />
 
 ## Hurricane Irma (September 2017)
+
+`./_HurricaneIrma_2017/`
 
 This folder is a cloned repo from USGS. Original location is
 <https://github.com/DOI-USGS/hurricane-irma>
