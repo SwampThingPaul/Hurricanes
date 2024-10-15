@@ -97,55 +97,59 @@ plot(st_geometry(FLCounty))
 
 
 ## Hurricane best track 2024
-head = c("BASIN", "CY", "YYYYMMDDHH", "TECHNUM", "TECH", "TAU", "Lat", "Lon", 
-         "VMAX", "MSLP", "TY", "RAD", "WINDCODE", "RAD1", "RAD2", "RAD3", "RAD4",
-         "POUTER", "ROUTER", "RMW", "GUSTS", "EYE", "SUBREGION", "MAXSEAS", 
-         "INITIALS", "DIR", "SPEED", "STORMNAME", "DEPTH", "SEAS", "SEASCODE",
-         "SEAS1","SEAS2", "SEAS3", "SEAS4", "USERDEFINED", "userdata")
-
-link1 = "ftp://ftp.nhc.noaa.gov/atcf/btk/"
-
-flist = strsplit( RCurl::getURL(link1, dirlistonly = TRUE),"\r\n")[[1]]
-flist = flist[grep("bal",flist)]
-
-## Milton is Hurricane 14
-tmp = readLines(paste0(link1,"bal142024.dat"))
-
-# Split each line by commas
-split_lines <- strsplit(tmp, ",\\s*")
-# Determine the maximum length of the rows to pad the shorter rows
-max_length <- max(sapply(split_lines, length))
-# Pad the rows to ensure consistent column length
-padded_lines <- lapply(split_lines, function(row) {
-  c(row, rep("", max_length - length(row)))
-})
-# Convert the list to a data frame
-df <- as.data.frame(do.call(rbind, padded_lines), stringsAsFactors = FALSE)[,1:37]
-colnames(df) = head
-
-milton.track.dat = df
-lat.str.val = strsplit(milton.track.dat$Lat, "(?=[A-Za-z])", perl = TRUE)
-lon.str.val = strsplit(milton.track.dat$Lon, "(?=[A-Za-z])", perl = TRUE)
-
-milton.track.dat$Lat.DD = with(milton.track.dat,ifelse(sapply(lat.str.val,"[",2)=="N",
-                                             as.numeric(sapply(lat.str.val,"[",1))/10,
-                                             (as.numeric(sapply(lat.str.val,"[",1))/10)*-1)
-)
-milton.track.dat$Lon.DD = with(milton.track.dat,ifelse(sapply(lon.str.val,"[",2)=="N",
-                                             as.numeric(sapply(lon.str.val,"[",1))/10,
-                                             (as.numeric(sapply(lon.str.val,"[",1))/10)*-1)
-)
-
-milton.track.dat$DateTime = with(milton.track.dat,date.fun(paste0(
-  substr(YYYYMMDDHH,1,4),"-",
-  substr(YYYYMMDDHH,5,6),"-",
-  substr(YYYYMMDDHH,7,8)," ",
-  substr(YYYYMMDDHH,9,10)
-),tz="UTC",form="%Y-%m-%d %H"))
-
-milton.track.dat$DateTime.EST = date.fun(milton.track.dat$DateTime,tz="EST",form="%Y-%m-%d %H")
-milton.track.dat$Date = date.fun(milton.track.dat$DateTime,tz="UTC")
+# head = c("BASIN", "CY", "YYYYMMDDHH", "TECHNUM", "TECH", "TAU", "Lat", "Lon", 
+#          "VMAX", "MSLP", "TY", "RAD", "WINDCODE", "RAD1", "RAD2", "RAD3", "RAD4",
+#          "POUTER", "ROUTER", "RMW", "GUSTS", "EYE", "SUBREGION", "MAXSEAS", 
+#          "INITIALS", "DIR", "SPEED", "STORMNAME", "DEPTH", "SEAS", "SEASCODE",
+#          "SEAS1","SEAS2", "SEAS3", "SEAS4", "USERDEFINED", "userdata")
+# 
+# link1 = "ftp://ftp.nhc.noaa.gov/atcf/btk/"
+# 
+# flist = strsplit( RCurl::getURL(link1, dirlistonly = TRUE),"\r\n")[[1]]
+# flist = flist[grep("bal",flist)]
+# 
+# ## Milton is Hurricane 14
+# tmp = readLines(paste0(link1,"bal142024.dat"))
+# 
+# # Split each line by commas
+# split_lines <- strsplit(tmp, ",\\s*")
+# # Determine the maximum length of the rows to pad the shorter rows
+# max_length <- max(sapply(split_lines, length))
+# # Pad the rows to ensure consistent column length
+# padded_lines <- lapply(split_lines, function(row) {
+#   c(row, rep("", max_length - length(row)))
+# })
+# # Convert the list to a data frame
+# df <- as.data.frame(do.call(rbind, padded_lines), stringsAsFactors = FALSE)[,1:37]
+# colnames(df) = head
+# 
+# milton.track.dat = df
+# lat.str.val = strsplit(milton.track.dat$Lat, "(?=[A-Za-z])", perl = TRUE)
+# lon.str.val = strsplit(milton.track.dat$Lon, "(?=[A-Za-z])", perl = TRUE)
+# 
+# milton.track.dat$Lat.DD = with(milton.track.dat,ifelse(sapply(lat.str.val,"[",2)=="N",
+#                                              as.numeric(sapply(lat.str.val,"[",1))/10,
+#                                              (as.numeric(sapply(lat.str.val,"[",1))/10)*-1)
+# )
+# milton.track.dat$Lon.DD = with(milton.track.dat,ifelse(sapply(lon.str.val,"[",2)=="N",
+#                                              as.numeric(sapply(lon.str.val,"[",1))/10,
+#                                              (as.numeric(sapply(lon.str.val,"[",1))/10)*-1)
+# )
+# 
+# milton.track.dat$DateTime = with(milton.track.dat,date.fun(paste0(
+#   substr(YYYYMMDDHH,1,4),"-",
+#   substr(YYYYMMDDHH,5,6),"-",
+#   substr(YYYYMMDDHH,7,8)," ",
+#   substr(YYYYMMDDHH,9,10)
+# ),tz="UTC",form="%Y-%m-%d %H"))
+# 
+# milton.track.dat$DateTime.EST = date.fun(milton.track.dat$DateTime,tz="EST",form="%Y-%m-%d %H")
+# milton.track.dat$Date = date.fun(milton.track.dat$DateTime,tz="UTC")
 # write.csv(milton.track.dat,paste0(export.path,"milton_track.csv"),row.names = F)
+
+milton.track.dat=read.csv(paste0(export.path,"milton_track.csv"))|>
+  mutate(DateTime.EST = date.fun(DateTime,tz="EST",form="%Y-%m-%d %H"),
+         Date = date.fun(DateTime,tz="UTC"))
 
 milton.track.dat.sp=st_as_sf(subset(milton.track.dat,is.na(Lat.DD)==F),coords=c("Lon.DD","Lat.DD"),crs=wgs84)|>
   st_transform(utm17)
@@ -455,3 +459,67 @@ gifski::gifski(file.names,
 #                loop = T,
 #                width=(6.5*200)*2,
 #                height=(5.5*200)*2)
+
+
+# Alafia Sites ------------------------------------------------------------
+alafia.sites = c("02301721","02301500")
+
+alafia.dat=readNWISdata(
+  service="iv",
+  parameterCd=pCode,
+  sites =alafia.sites,
+  startDate = format(startDate,"%Y-%m-%d"),
+  endDate = format(endDate,"%Y-%m-%d"))|>
+  renameNWISColumns()
+
+head(alafia.dat)
+alafia.site.info = dataRetrieval::readNWISdata(service = "site",
+                            seriesCatalogOutput=TRUE,
+                            sites=alafia.sites)
+
+
+
+alafia.site.info=unique(alafia.site.info[,c("site_no","station_nm","dec_lat_va","dec_long_va","alt_datum_cd")])
+alafia.site.info=alafia.site.info|>
+  merge(
+    data.frame(site_no = c("02301721","02301500"),
+               WL_con = c(-0.272,-0.281)# in meters from vertcon
+               ),"site_no",all.x=T)|> 
+  merge(data.frame(site_no = c("02301721","02301500"),
+                   shrt.nme=c("Gibsonton","Lithia")
+                   ),"site_no",all.x=T)
+
+alafia.dat=merge(alafia.dat,alafia.site.info[,c("site_no","WL_con","shrt.nme")],"site_no",all.x=T)
+alafia.dat$GH_Inst_NGVD29 = with(alafia.dat,GH_Inst+abs(WL_con))
+
+alafia.dat.xtab = dcast(alafia.dat,dateTime~shrt.nme,value.var="GH_Inst_NGVD29",mean)
+ddply(alafia.dat,"site_no",summarise,min.val = min(GH_Inst_NGVD29,na.rm=T),max.val = max(GH_Inst_NGVD29,na.rm=T))
+
+# png(filename=paste0(plot.path,"/alfia_stg.png"),width=6.5,height=5,units="in",res=200,type="windows",bg="white")
+par(family="serif",mar=c(1,3.5,0.25,0.4),oma=c(3,0.1,1,0.3))
+layout(matrix(1:2,2,1))
+xlim.val=date.fun(c("2024-10-04","2024-10-14"),tz="UTC");xmaj=seq(xlim.val[1],xlim.val[2],"3 days");xmin=seq(xlim.val[1],xlim.val[2],"1 days")
+
+ylim.val = c(-3,4);by.y=1;ymaj=seq(ylim.val[1],ylim.val[2],by.y);ymin=seq(ylim.val[1],ylim.val[2],by.y/2)
+plot(Gibsonton~dateTime,alafia.dat.xtab,xlim=xlim.val,ylim=ylim.val,type="n",ann=F,axes=F,yaxs="i")
+abline(h=ymaj,v=xmaj,lty=3,col="grey",lwd=0.5)
+lines(Gibsonton~dateTime,alafia.dat.xtab,col="dodgerblue1",lwd=2)
+abline(h=0)
+axis_fun(1,xmaj,xmin,NA)
+axis_fun(2,ymaj,ymin,format(ymaj));box(lwd=1)
+with(subset(alafia.site.info,shrt.nme=="Gibsonton"),mtext(side=3,adj=0,line=-1,paste0(" ",shrt.nme," (USGS Site #: ",site_no,")"),cex=0.75))
+abline(v=MiltonLandFall.utc,col=adjustcolor("pink",0.75),lwd=2)
+
+ylim.val = c(8,25);by.y=4;ymaj=seq(ylim.val[1],ylim.val[2],by.y);ymin=seq(ylim.val[1],ylim.val[2],by.y/2)
+plot(Lithia~dateTime,alafia.dat.xtab,xlim=xlim.val,ylim=ylim.val,type="n",ann=F,axes=F,yaxs="i")
+abline(h=ymaj,v=xmaj,lty=3,col="grey",lwd=0.5)
+lines(Lithia~dateTime,alafia.dat.xtab,col="dodgerblue1",lwd=2)
+abline(h=0)
+axis_fun(1,xmaj,xmin,format(xmaj,"%b %d"))
+axis_fun(2,ymaj,ymin,format(ymaj));box(lwd=1)
+with(subset(alafia.site.info,shrt.nme=="Lithia"),mtext(side=3,adj=0,line=-1,paste0(" ",shrt.nme," (USGS Site #: ",site_no,")"),cex=0.75))
+abline(v=MiltonLandFall.utc,col=adjustcolor("pink",0.75),lwd=2)
+mtext(side=1,line=1.75,"Date (Month-Day)")
+
+mtext(side=2,outer=T,line=-1.25,"Stage Elevation (Ft, NGVD29)")
+dev.off()
