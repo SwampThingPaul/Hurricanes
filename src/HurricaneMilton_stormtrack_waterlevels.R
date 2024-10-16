@@ -540,6 +540,24 @@ LOK_NS$datetime.utc=date.fun(LOK_NS$DATETIME,tz="UTC",form="%Y-%m-%d %H:%M:%S")
 LOK_NS$datetime.hr.utc=date.fun(paste(format(LOK_NS$datetime.utc,"%Y-%m-%d"),
                                         format(LOK_NS$datetime.utc,"%H"),":00:00"),form="%Y-%m-%d %H :%M:%S",tz="UTC")
 
+round_to_nearest_30min <- function(time,interval = 30) {
+  half_hour <- 60 * interval # 30 minutes in seconds
+  rounded_time <- as.POSIXct(round(as.numeric(time) / half_hour) * half_hour, origin = "1970-01-01", tz = "UTC")
+  return(rounded_time)
+}
+round_to_nearest_30min(as.POSIXct("2024-10-01 05:12:00",tz="UTC"),15)
+LOK_NS$datetime.utc.rnd=round_to_nearest_30min(LOK_NS$datetime.utc)
+
+dcast(LOK_NS,datetime.utc.rnd~SITE,value.var="Data.Value",length)
+LOK_NS.xtab = dcast(LOK_NS,datetime.utc.rnd~SITE,value.var="Data.Value",mean,na.rm=T)
+LOK_NS.xtab$N_S_diff = with(LOK_NS.xtab,S133-S3)
+max(LOK_NS.xtab$N_S_diff,na.rm=T)
+summary(LOK_NS.xtab)
+
+round(max(LOK_NS.xtab$N_S_diff,na.rm=T),1)
+ft.to.m(round(max(LOK_NS.xtab$N_S_diff,na.rm=T),1))
+
+dcast(LOK_NS,datetime.utc~SITE,value.var="Data.Value",mean,na.rm=T)
 LOK_NS.xtab = dcast(LOK_NS,datetime.hr.utc~SITE,value.var="Data.Value",mean,na.rm=T)
 LOK_NS.xtab$N_S_diff = with(LOK_NS.xtab,S133-S3)
 max(LOK_NS.xtab$N_S_diff)
